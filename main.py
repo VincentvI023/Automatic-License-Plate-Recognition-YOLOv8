@@ -5,7 +5,10 @@ import util
 from sort.sort import *
 from util import get_car, read_license_plate, write_csv
 import os
+import csv
 
+
+plate_folder = '/plates'
 results = {}
 
 mot_tracker = Sort()
@@ -16,6 +19,16 @@ license_plate_detector = YOLO('license_plate_detector.pt')
 
 # load video
 cap = cv2.VideoCapture('./real-sample.mov')
+
+# Clear all rows except the first one in the CSV file
+csv_file_path = './test.csv'
+with open(csv_file_path, 'r') as file:
+    reader = csv.reader(file)
+    header = next(reader)
+
+with open(csv_file_path, 'w', newline='') as file:
+    writer = csv.writer(file)
+    writer.writerow(header)
 
 vehicles = [2, 3, 5, 7]
 
@@ -51,15 +64,28 @@ while ret:
 
                 # crop license plate
                 license_plate_crop = frame[int(y1):int(y2), int(x1): int(x2), :]
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_crop.jpg'), license_plate_crop)
+
                 # process license plate
                 license_plate_crop_gray = cv2.cvtColor(license_plate_crop, cv2.COLOR_BGR2GRAY)
-                license_plate_crop_thresh = cv2.adaptiveThreshold(license_plate_crop_gray, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 13,2)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_gray.jpg'), license_plate_crop_gray)
+
+                license_plate_crop_thresh = cv2.adaptiveThreshold(license_plate_crop_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 13, 2)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_thresh.jpg'), license_plate_crop_thresh)
+
                 # Additional processing variants
                 license_plate_crop_blur = cv2.GaussianBlur(license_plate_crop_gray, (5, 5), 0)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_blur.jpg'), license_plate_crop_blur)
+
                 _, license_plate_crop_binary = cv2.threshold(license_plate_crop_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_binary.jpg'), license_plate_crop_binary)
+
                 license_plate_crop_median = cv2.medianBlur(license_plate_crop_gray, 5)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_median.jpg'), license_plate_crop_median)
+
                 kernel = np.ones((3, 3), np.uint8)
                 license_plate_crop_morph = cv2.morphologyEx(license_plate_crop_thresh, cv2.MORPH_CLOSE, kernel)
+                cv2.imwrite(os.path.join(plate_folder, f'frame_{frame_nmr}_car_{car_id}_morph.jpg'), license_plate_crop_morph)
 
                 # Perform OCR on different variants of the license plate
                 license_plate_text_variants = [
@@ -82,6 +108,7 @@ while ret:
                                                                     'text': license_plate_text,
                                                                     'bbox_score': score,
                                                                     'text_score': license_plate_text_score}}
-
-# write results
-write_csv(results, './test.csv')
+                    # Write results to CSV
+                    with open(csv_file_path, 'a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score])

@@ -1,6 +1,7 @@
 import string
 import easyocr
 import logging
+from rdw.rdw import Rdw
 
 from matplotlib import pyplot as plt
 
@@ -64,9 +65,12 @@ def write_csv(results, output_path):
 
 
 def license_complies_format(text):
-    if len(text) != 7:
-        return False
-
+    text = text.replace('-', '')
+    licence_plate_clean = ''.join(filter(lambda x: x.isalnum() and x in string.ascii_letters + string.digits, text))
+    
+    if len(licence_plate_clean) != 6:
+        return False, licence_plate_clean
+    
     # Check if the license plate text complies with Dutch license plate formats
     # Dutch license plates can have several formats, such as:
     # - XX-99-99
@@ -77,20 +81,34 @@ def license_complies_format(text):
     # - 99-XX-XX
     # Where X is a letter and 9 is a digit
 
-    formats = [
-        (string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits, string.digits, string.digits),
-        (string.digits, string.digits, string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase),
-        (string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits),
-        (string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase),
-        (string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits),
-        (string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase)
-    ]
-
-    for fmt in formats:
-        if all(text[i] in fmt[i] for i in range(6)):
-            return True
-    else:
-        return False
+    # formats = [
+    #     (string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits, string.digits, string.digits),
+    #     (string.digits, string.digits, string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase),
+    #     (string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits),
+    #     (string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase),
+    #     (string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.digits, string.digits),
+    #     (string.digits, string.digits, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase, string.ascii_uppercase)
+    # ]
+    
+    # for fmt in formats:
+    #     if all(text[i] in fmt[i] for i in range(6)):
+    #         return True
+    # else:
+    #     return False
+    car = Rdw()
+    car_exist = car.get_vehicle_data(licence_plate_clean)
+    
+    if len(car_exist) != 0:
+        print(car_exist[0]['voertuigsoort'])
+        print(car_exist[0]['merk'])
+        
+        if car_exist[0]['tweede_kleur'] != "Niet geregistreerd":
+            print(car_exist[0]['tweede_kleur'])
+        else:
+            print(car_exist[0]['eerste_kleur'])
+        return True, licence_plate_clean
+    
+    return False, licence_plate_clean
 
 
 def format_license(text):
@@ -129,15 +147,12 @@ def read_license_plate(license_plate_crop):
 
     for detection in detections:
         bbox, text, score = detection
-
-        text = text.upper().replace(' ', '')
+        result = license_complies_format(text)
         
-        # Log de gedetecteerde tekst en de bijbehorende score
-        logging.info(f"Gedetecteerde tekst: {text}, Score: {score}")
-        print(f"Gedetecteerde tekst: {text}, Score: {score}")
-
-        if license_complies_format(text):
-            return format_license(text), score
+        if result[0]:
+            logging.info(f"Gedetecteerde tekst: {result[1]}, Score: {score}")
+            print(f"Gedetecteerde tekst: {result[1]}, Score: {score}")
+            return result[1], score
         
     return None, None
 
