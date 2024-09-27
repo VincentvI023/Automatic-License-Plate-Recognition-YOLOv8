@@ -74,12 +74,13 @@ def license_complies_format(text):
     try:
         car = Rdw()
         car_exist = car.get_vehicle_data(licence_plate_clean)
+        
+        if len(car_exist) != 0:
+            car_values = [car_exist[0]['voertuigsoort'], car_exist[0]['merk']]
+            return True, licence_plate_clean, car_values
+    
     except Exception as e:
         logging.error(f"Error: {e}")
-    
-    if len(car_exist) != 0:
-        car_values = [car_exist[0]['voertuigsoort'], car_exist[0]['merk']]
-        return True, licence_plate_clean, car_values
     
     return False, None, None
 

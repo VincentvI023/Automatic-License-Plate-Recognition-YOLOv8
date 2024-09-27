@@ -106,17 +106,10 @@ while ret:
                     print("--------------------------------------------------")
                     print(license_plate_text, license_plate_text_score, car_values[0], car_values[1])
                     print("--------------------------------------------------")
-                
-                
-                    results[frame_nmr][car_id] = {'car': {'bbox': [xcar1, ycar1, xcar2, ycar2]},
-                                                  'license_plate': {'bbox': [x1, y1, x2, y2],
-                                                                    'text': license_plate_text,
-                                                                    'bbox_score': score,
-                                                                    'text_score': license_plate_text_score}}
                     
                     excel_file_path = './car_values.xlsx'
 
-                    # Load or create the workbook and select the active sheet
+                    # Load the workbook and select the active sheet
                     if os.path.exists(excel_file_path):
                         workbook = openpyxl.load_workbook(excel_file_path)
                         sheet = workbook.active
@@ -129,6 +122,6 @@ while ret:
                     with open(csv_file_path, 'a', newline='') as file:
                         writer = csv.writer(file)
                         writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score])
-                        
                 else:
-                    continue
+                    continue      
+print("End of processing")
