@@ -69,22 +69,19 @@ def license_complies_format(text):
     licence_plate_clean = ''.join(filter(lambda x: x.isalnum() and x in string.ascii_letters + string.digits, text))
     
     if len(licence_plate_clean) != 6:
-        return False, licence_plate_clean
+        return False, None, None
 
-    car = Rdw()
-    car_exist = car.get_vehicle_data(licence_plate_clean)
+    try:
+        car = Rdw()
+        car_exist = car.get_vehicle_data(licence_plate_clean)
+    except Exception as e:
+        logging.error(f"Error: {e}")
     
     if len(car_exist) != 0:
-        print(car_exist[0]['voertuigsoort'])
-        print(car_exist[0]['merk'])
-        
-        if car_exist[0]['tweede_kleur'] != "Niet geregistreerd":
-            print(car_exist[0]['tweede_kleur'])
-        else:
-            print(car_exist[0]['eerste_kleur'])
-        return True, licence_plate_clean
+        car_values = [car_exist[0]['voertuigsoort'], car_exist[0]['merk']]
+        return True, licence_plate_clean, car_values
     
-    return False, licence_plate_clean
+    return False, None, None
 
 
 def read_license_plate(license_plate_crop):
@@ -105,10 +102,9 @@ def read_license_plate(license_plate_crop):
         
         if result[0]:
             logging.info(f"Gedetecteerde tekst: {result[1]}, Score: {score}")
-            print(f"Gedetecteerde tekst: {result[1]}, Score: {score}")
-            return result[1], score
+            return result[1], score, result[2]
         
-    return None, None
+    return None, None, None
 
 
 def get_car(license_plate, vehicle_track_ids):
