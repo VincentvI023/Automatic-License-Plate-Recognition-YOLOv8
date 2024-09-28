@@ -1,5 +1,6 @@
 from ultralytics import YOLO
 import cv2
+from datetime import datetime, timedelta
 
 import util
 from sort.sort import *
@@ -7,7 +8,7 @@ from util import get_car, read_license_plate, write_csv
 import os
 import csv
 import openpyxl
-
+import numpy as np
 
 plate_folder = '/plates'
 results = {}
@@ -20,6 +21,10 @@ license_plate_detector = YOLO('license_plate_detector.pt')
 
 # load video
 cap = cv2.VideoCapture('./real-sample.mov')
+
+# Starttijd invoeren (bijvoorbeeld: de tijd waarop de video is begonnen)
+start_time_str = "11:54"  # Starttijd in het formaat "HH:MM"
+start_time = datetime.strptime(start_time_str, "%H:%M")  # Omzetten naar datetime object
 
 # Clear all rows except the first one in the CSV file
 csv_file_path = './test.csv'
@@ -102,11 +107,23 @@ while ret:
                 # Select the best variant based on the text score
                 license_plate_text, license_plate_text_score, car_values = max(license_plate_text_variants, key=lambda x: x[1] if x[0] is not None else 0)
                 
-                if license_plate_text is not None and license_plate_text_score > 0.5:
+                if license_plate_text is not None and license_plate_text_score > 0.85:
                     print("--------------------------------------------------")
                     print(license_plate_text, license_plate_text_score, car_values[0], car_values[1])
                     print("--------------------------------------------------")
+
+                    # Get current time in the video (milliseconds)
+                    current_time_ms = cap.get(cv2.CAP_PROP_POS_MSEC)
+
+                    # Convert milliseconds to seconds and create timedelta
+                    video_time_delta = timedelta(milliseconds=current_time_ms)
+
+                    # Add video time to the start time
+                    detection_time = start_time + video_time_delta
                     
+                    # Format detection time as string
+                    formatted_detection_time = detection_time.strftime("%H:%M:%S.%f")[:-3]  # Bijvoorbeeld: "11:54:32.123"
+
                     excel_file_path = './car_values.xlsx'
 
                     # Load the workbook and select the active sheet
@@ -114,14 +131,14 @@ while ret:
                         workbook = openpyxl.load_workbook(excel_file_path)
                         sheet = workbook.active
 
-                    # Append the new row with car values
-                    sheet.append([license_plate_text, license_plate_text_score, car_values[0], car_values[1]])
+                    # Append the new row with car values and actual time
+                    sheet.append([license_plate_text, license_plate_text_score, car_values[0], car_values[1], formatted_detection_time])
                     workbook.save(excel_file_path)
                     
                     # Write results to CSV
                     with open(csv_file_path, 'a', newline='') as file:
                         writer = csv.writer(file)
-                        writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score])
+                        writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score, formatted_detection_time])
                 else:
                     continue      
 print("End of processing")
