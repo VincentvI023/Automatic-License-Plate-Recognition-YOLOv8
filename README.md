@@ -19,3 +19,4 @@ pip install -r requirements.txt
 python main.py
 ```
 
+Source: https://github.com/Muhammad-Zeerak-Khan/Automatic-License-Plate-Recognition-using-YOLOv8 under MIT licence
