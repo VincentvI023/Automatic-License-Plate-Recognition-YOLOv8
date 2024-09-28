@@ -9,6 +9,7 @@ reader = easyocr.Reader(['nl'], gpu=False)
 logging.basicConfig(filename='kentekens.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def license_complies_format(text):
+    # Remove all special characters and spaces
     text = text.replace('-', '')
     licence_plate_clean = ''.join(filter(lambda x: x.isalnum() and x in string.ascii_letters + string.digits, text))
     
@@ -16,6 +17,7 @@ def license_complies_format(text):
         return False, None, None
 
     try:
+        # Check if the license plate exists in the RDW database
         car = Rdw()
         car_exist = car.get_vehicle_data(licence_plate_clean)
         
@@ -30,15 +32,6 @@ def license_complies_format(text):
 
 
 def read_license_plate(license_plate_crop):
-    """
-    Read the license plate text from the given cropped image.
-
-    Args:
-        license_plate_crop (PIL.Image.Image): Cropped image containing the license plate.
-
-    Returns:
-        tuple: Tuple containing the formatted license plate text and its confidence score.
-    """
     detections = reader.readtext(license_plate_crop)
 
     for detection in detections:
@@ -53,16 +46,6 @@ def read_license_plate(license_plate_crop):
 
 
 def get_car(license_plate, vehicle_track_ids):
-    """
-    Retrieve the vehicle coordinates and ID based on the license plate coordinates.
-
-    Args:
-        license_plate (tuple): Tuple containing the coordinates of the license plate (x1, y1, x2, y2, score, class_id).
-        vehicle_track_ids (list): List of vehicle track IDs and their corresponding coordinates.
-
-    Returns:
-        tuple: Tuple containing the vehicle coordinates (x1, y1, x2, y2) and ID.
-    """
     x1, y1, x2, y2, score, class_id = license_plate
 
     foundIt = False

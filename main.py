@@ -122,7 +122,7 @@ while ret:
                     detection_time = start_time + video_time_delta
                     
                     # Format detection time as string
-                    formatted_detection_time = detection_time.strftime("%H:%M:%S.%f")[:-3]  # Bijvoorbeeld: "11:54:32.123"
+                    formatted_detection_time = detection_time.strftime("%H:%M:%S.%f")[:-3]
 
                     excel_file_path = './car_values.xlsx'
 
