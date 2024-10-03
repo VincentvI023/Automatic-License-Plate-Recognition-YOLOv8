@@ -9,6 +9,7 @@ import os
 import csv
 import openpyxl
 import numpy as np
+from tqdm import tqdm
 
 plate_folder = '/plates'
 results = {}
@@ -20,10 +21,10 @@ coco_model = YOLO('yolov8n.pt')
 license_plate_detector = YOLO('license_plate_detector.pt')
 
 # load video
-cap = cv2.VideoCapture('./IMG_0084.mov')
+cap = cv2.VideoCapture('./videos/3-10-2024-ochtend.MOV')
 
 # Starttijd invoeren (bijvoorbeeld: de tijd waarop de video is begonnen)
-start_time_str = "13:19"  # Starttijd in het formaat "HH:MM"
+start_time_str = "07:38"  # Starttijd in het formaat "HH:MM"
 start_time = datetime.strptime(start_time_str, "%H:%M")  # Omzetten naar datetime object
 
 # Clear all rows except the first one in the CSV file
@@ -37,11 +38,29 @@ start_time = datetime.strptime(start_time_str, "%H:%M")  # Omzetten naar datetim
 #     writer.writerow(header)
 
 vehicles = [2, 3, 5, 7]
+vehicle_info = [
+    {"id": 2, "name": "car", "count": 0},
+    {"id": 3, "name": "motorcycle", "count": 0},
+    {"id": 5, "name": "bus", "count": 0},
+    {"id": 7, "name": "truck", "count": 0}
+]
+unique_vehicle_ids = set()
+track_id_to_vehicle_type = {}
 
 # read frames
 frame_nmr = -1
 ret = True
+
+# Get total number of frames
+total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
+# Initialize progress bar
+progress_bar = tqdm(total=total_frames, desc="Processing frames")
+
 while ret:
+    frame_nmr += 1
+    ret, frame = cap.read()
+    progress_bar.update(1)
     frame_nmr += 1
     ret, frame = cap.read()
     if ret:
@@ -52,11 +71,68 @@ while ret:
         for detection in detections.boxes.data.tolist():
             x1, y1, x2, y2, score, class_id = detection
             if int(class_id) in vehicles:
-                detections_.append([x1, y1, x2, y2, score])
+                detections_.append([x1, y1, x2, y2, score])  
+                
 
-        # track vehicles
+            # track vehicles
         if len(detections_) > 0: 
             track_ids = mot_tracker.update(np.asarray(detections_))
+            
+        # Loop over tracked objects and add track_id to unique_vehicle_ids
+        for tracked_object in track_ids:
+            track_id = int(tracked_object[4])  # track_id is in the 5th position (index 4)
+            
+            # Detect vehicles using bounding boxes and get corresponding car
+            for detection in detections.boxes.data.tolist():
+                x1, y1, x2, y2, score, class_id = detection
+                
+                # Only process if the detected class_id corresponds to a vehicle
+                if int(class_id) in vehicles:
+                    # Use get_car to associate this detection with a vehicle track_id
+                    car_values = get_car([x1, y1, x2, y2, score, class_id], track_ids)
+                    _, _, _, _, car_track_id = car_values
+                    
+                    # If get_car returns a valid track_id (not -1), check if it's unique
+                    if car_track_id != -1 and car_track_id not in unique_vehicle_ids:
+                        # Add the unique track_id to the set
+                        unique_vehicle_ids.add(car_track_id)
+                        
+                        # Record the vehicle class (car, bus, etc.)
+                        track_id_to_vehicle_type[car_track_id] = int(class_id)
+                        
+                        # Increment the count for the corresponding vehicle class
+                        for vehicle in vehicle_info:
+                            if vehicle["id"] == int(class_id):
+                                vehicle["count"] += 1  # Increment count for this vehicle type
+                                # Write the updated vehicle counts to the Excel sheet
+                                excel_file_path = './vehicle_counts.xlsx'
+
+                                # Load the workbook and select the active sheet
+                                if os.path.exists(excel_file_path):
+                                    workbook = openpyxl.load_workbook(excel_file_path)
+                                    sheet = workbook.active
+                                else:
+                                    workbook = openpyxl.Workbook()
+                                    sheet = workbook.active
+                                    sheet.append(["Vehicle Type", "Count"])
+
+                                # Find the row corresponding to the vehicle type and update the count
+                                for row in sheet.iter_rows(min_row=2, max_row=sheet.max_row, min_col=1, max_col=2):
+                                    if row[0].value == vehicle["name"]:
+                                        row[1].value = vehicle["count"]
+                                        break
+                                else:
+                                    # If the vehicle type is not found, append a new row
+                                    sheet.append([vehicle["name"], vehicle["count"]])
+
+                                # Save the workbook
+                                workbook.save(excel_file_path)
+                                break
+
+        # After processing, print the unique vehicle counts
+        print(f"Total unique vehicles: {len(unique_vehicle_ids)}")
+        for vehicle in vehicle_info:
+            print(f"Total {vehicle['name']}s: {vehicle['count']}")
 
         # detect license plates
         license_plates = license_plate_detector(frame)[0]
