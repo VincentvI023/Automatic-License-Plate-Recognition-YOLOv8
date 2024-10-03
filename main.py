@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 import util
 from sort.sort import *
-from util import get_car, read_license_plate, write_csv
+from util import get_car, read_license_plate
 import os
 import csv
 import openpyxl
@@ -20,21 +20,21 @@ coco_model = YOLO('yolov8n.pt')
 license_plate_detector = YOLO('license_plate_detector.pt')
 
 # load video
-cap = cv2.VideoCapture('./real-sample.mov')
+cap = cv2.VideoCapture('./IMG_0084.mov')
 
 # Starttijd invoeren (bijvoorbeeld: de tijd waarop de video is begonnen)
-start_time_str = "11:54"  # Starttijd in het formaat "HH:MM"
+start_time_str = "13:19"  # Starttijd in het formaat "HH:MM"
 start_time = datetime.strptime(start_time_str, "%H:%M")  # Omzetten naar datetime object
 
 # Clear all rows except the first one in the CSV file
-csv_file_path = './test.csv'
-with open(csv_file_path, 'r') as file:
-    reader = csv.reader(file)
-    header = next(reader)
+# csv_file_path = './test.csv'
+# with open(csv_file_path, 'r') as file:
+#     reader = csv.reader(file)
+#     header = next(reader)
 
-with open(csv_file_path, 'w', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow(header)
+# with open(csv_file_path, 'w', newline='') as file:
+#     writer = csv.writer(file)
+#     writer.writerow(header)
 
 vehicles = [2, 3, 5, 7]
 
@@ -107,7 +107,7 @@ while ret:
                 # Select the best variant based on the text score
                 license_plate_text, license_plate_text_score, car_values = max(license_plate_text_variants, key=lambda x: x[1] if x[0] is not None else 0)
                 
-                if license_plate_text is not None and license_plate_text_score > 0.85:
+                if license_plate_text is not None and license_plate_text_score > 0.55:
                     print("--------------------------------------------------")
                     print(license_plate_text, license_plate_text_score, car_values[0], car_values[1])
                     print("--------------------------------------------------")
@@ -124,7 +124,7 @@ while ret:
                     # Format detection time as string
                     formatted_detection_time = detection_time.strftime("%H:%M:%S.%f")[:-3]
 
-                    excel_file_path = './car_values.xlsx'
+                    excel_file_path = './car_values_test_day.xlsx'
 
                     # Load the workbook and select the active sheet
                     if os.path.exists(excel_file_path):
@@ -136,9 +136,9 @@ while ret:
                     workbook.save(excel_file_path)
                     
                     # Write results to CSV
-                    with open(csv_file_path, 'a', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score, formatted_detection_time])
+                    # with open(csv_file_path, 'a', newline='') as file:
+                    #     writer = csv.writer(file)
+                    #     writer.writerow([frame_nmr, car_id, xcar1, ycar1, xcar2, ycar2, x1, y1, x2, y2, license_plate_text, score, license_plate_text_score, formatted_detection_time])
                 else:
                     continue      
 print("End of processing")
