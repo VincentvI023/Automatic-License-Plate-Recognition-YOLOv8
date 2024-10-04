@@ -11,33 +11,30 @@ import csv
 import numpy as np
 from tqdm import tqdm
 
+# Change the following variables to the correct paths
 plate_folder = '/plates'
 csv_file_path = './output/3-10-2024-ochtend.csv'
 csv_file_path = './output/3-10-2024-vehicle-counts.csv'
+start_time_str = "07:38"  # Starttijd in het formaat "HH:MM"
+cap = cv2.VideoCapture('./videos/3-10-2024-ochtend.MOV')
+
 
 results = {}
-
 mot_tracker = Sort()
 
 # load models
 coco_model = YOLO('yolov8n.pt')
 license_plate_detector = YOLO('license_plate_detector.pt')
 
-# load video
-cap = cv2.VideoCapture('./videos/3-10-2024-ochtend.MOV')
 start_frame = load_last_frame()
-
-
-# Starttijd invoeren (bijvoorbeeld: de tijd waarop de video is begonnen)
-start_time_str = "07:38"  # Starttijd in het formaat "HH:MM"
 start_time = datetime.strptime(start_time_str, "%H:%M")  # Omzetten naar datetime object
 
 vehicles = [2, 3, 5, 7]
 vehicle_info = [
-    {"id": 2, "name": "car", "count": 2947},
-    {"id": 3, "name": "motorcycle", "count": 112},
-    {"id": 5, "name": "bus", "count": 138},
-    {"id": 7, "name": "truck", "count": 246}
+    {"id": 2, "name": "car", "count": 0},
+    {"id": 3, "name": "motorcycle", "count": 0},
+    {"id": 5, "name": "bus", "count": 0},
+    {"id": 7, "name": "truck", "count": 0}
 ]
 
 unique_vehicle_ids = set()
@@ -46,11 +43,7 @@ track_id_to_vehicle_type = {}
 # read frames
 frame_nmr = load_last_frame()
 ret = True
-
-# Get total number of frames
 total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-# Initialize progress bar
 progress_bar = tqdm(total=total_frames, desc="Processing frames", initial=frame_nmr + 1)
 
 while ret:
@@ -58,7 +51,7 @@ while ret:
     ret, frame = cap.read()
     progress_bar.update(1)
     frame_nmr += 1
-    save_frame_number()
+    save_frame_number(frame_nmr)
     ret, frame = cap.read()
     if ret:
         results[frame_nmr] = {}
@@ -91,17 +84,12 @@ while ret:
                     
                     # If get_car returns a valid track_id (not -1), check if it's unique
                     if car_track_id != -1 and car_track_id not in unique_vehicle_ids:
-                        # Add the unique track_id to the set
                         unique_vehicle_ids.add(car_track_id)
-                        
-                        # Record the vehicle class (car, bus, etc.)
                         track_id_to_vehicle_type[car_track_id] = int(class_id)
                         
                         # Increment the count for the corresponding vehicle class
                         for vehicle in vehicle_info:
                             if vehicle["id"] == int(class_id):
-                                vehicle["count"] += 1  # Increment count for this vehicle type
-
                                 # Check if the CSV file exists
                                 file_exists = os.path.isfile(csv_file_path)
 
@@ -116,10 +104,12 @@ while ret:
                                 # Update the count for the vehicle type
                                 for row in existing_data:
                                     if row[0] == vehicle["name"]:
+                                        vehicle["count"] = int(row[1]) + 1  # Increment count based on CSV value
                                         row[1] = str(vehicle["count"])
                                         break
                                 else:
                                     # If the vehicle type is not found, append a new row
+                                    vehicle["count"] = 1
                                     existing_data.append([vehicle["name"], str(vehicle["count"])])
 
                                 # Write the updated data back to the CSV file
