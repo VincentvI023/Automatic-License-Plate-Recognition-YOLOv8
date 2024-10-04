@@ -3,6 +3,7 @@ import easyocr
 import logging
 from rdw.rdw import Rdw
 from matplotlib import pyplot as plt
+import os
 
 
 reader = easyocr.Reader(['nl'], gpu=False)
@@ -61,3 +62,17 @@ def get_car(license_plate, vehicle_track_ids):
         return vehicle_track_ids[car_indx]
 
     return -1, -1, -1, -1, -1
+
+def load_last_frame():
+    frame_file = 'frame_checkpoint.txt'
+    if os.path.exists(frame_file):
+        with open(frame_file, 'r') as f:
+            frame_num = f.read().strip()
+            if frame_num.isdigit():
+                return int(frame_num)
+    return 0  # Begin vanaf het eerste frame als er geen bestand is
+
+def save_frame_number(frame_num):
+    frame_file = 'frame_checkpoint.txt'
+    with open(frame_file, 'w') as f:
+        f.write(str(frame_num))
