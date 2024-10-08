@@ -13,10 +13,10 @@ from tqdm import tqdm
 
 # Change the following variables to the correct paths
 plate_folder = '/plates'
-csv_file_path_licence_plates = './output/3-10-2024-ochtend-licence.csv'
-csv_file_path_counter = './output/3-10-2024-ochtend-counts.csv'
-start_time_str = "07:38"  # Starttijd in het formaat "HH:MM"
-cap = cv2.VideoCapture('./videos/3-10-2024-ochtend.mov')
+csv_file_path_licence_plates = './output/8-10-2024-middag-licence.csv'
+csv_file_path_counter = './output/8-10-2024-middag-counts.csv'
+start_time_str = "00:00"  # Starttijd in het formaat "HH:MM"
+cap = cv2.VideoCapture('./videos/8-10-2024-middag.mov')
 
 
 results = {}
@@ -167,7 +167,7 @@ while ret:
                 # Select the best variant based on the text score
                 license_plate_text, license_plate_text_score, car_values = max(license_plate_text_variants, key=lambda x: x[1] if x[0] is not None else 0)
                 
-                if license_plate_text is not None and license_plate_text_score > 0.30:
+                if license_plate_text is not None and license_plate_text_score > 0.25:
                     print("--------------------------------------------------")
                     print(license_plate_text, license_plate_text_score, car_values[0], car_values[1])
                     print("--------------------------------------------------")
