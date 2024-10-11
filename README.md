@@ -14,7 +14,7 @@
 ```bash
 pip install -r requirements.txt
 ```
-* Run main.py with the sample video file to fill the car_values file 
+* Run main.py with the video file you want, after setting the correct values on line 15-19 run:
 ``` python
 python main.py
 ```
