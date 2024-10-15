@@ -7,16 +7,15 @@ from sort.sort import *
 from util import get_car, read_license_plate, load_last_frame, save_frame_number
 import os
 import csv
-import csv
 import numpy as np
 from tqdm import tqdm
 
 # Change the following variables to the correct paths
 plate_folder = '/plates'
-csv_file_path_licence_plates = './output/8-10-2024-middag-licence.csv'
-csv_file_path_counter = './output/8-10-2024-middag-counts.csv'
+csv_file_path_licence_plates = '/Users/vincent/Downloads/IFFDA bak/Automatic-License-Plate-Recognition-using-YOLOv8/output/8-10-2024-middag-licence-tweede-keer.csv'
+csv_file_path_counter = '/Users/vincent/Downloads/IFFDA bak/Automatic-License-Plate-Recognition-using-YOLOv8/output/8-10-2024-middag-counts-tweede-keer.csv'
 start_time_str = "15:56"  # Starttijd in het formaat "HH:MM"
-cap = cv2.VideoCapture('./videos/8-10-2024-middag.mov')
+cap = cv2.VideoCapture('/Users/vincent/Downloads/IFFDA bak/Automatic-License-Plate-Recognition-using-YOLOv8/videos/8-10-2024-middag.MOV')
 fps = cap.get(cv2.CAP_PROP_FPS) 
 
 
@@ -58,7 +57,7 @@ while ret:
     if ret:
         results[frame_nmr] = {}
         # detect vehicles
-        detections = coco_model(frame)[0]
+        detections = coco_model(frame, device='mps')[0]
         detections_ = []
         for detection in detections.boxes.data.tolist():
             x1, y1, x2, y2, score, class_id = detection

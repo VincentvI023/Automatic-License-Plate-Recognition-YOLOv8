@@ -64,7 +64,7 @@ def get_car(license_plate, vehicle_track_ids):
     return -1, -1, -1, -1, -1
 
 def load_last_frame():
-    frame_file = 'frame_checkpoint.txt'
+    frame_file = '/Users/vincent/Downloads/IFFDA bak/Automatic-License-Plate-Recognition-using-YOLOv8/frame_checkpoint.txt'
     if os.path.exists(frame_file):
         with open(frame_file, 'r') as f:
             frame_num = f.read().strip()
@@ -73,6 +73,6 @@ def load_last_frame():
     return 0  # Begin vanaf het eerste frame als er geen bestand is
 
 def save_frame_number(frame_num):
-    frame_file = 'frame_checkpoint.txt'
+    frame_file = '/Users/vincent/Downloads/IFFDA bak/Automatic-License-Plate-Recognition-using-YOLOv8/frame_checkpoint.txt'
     with open(frame_file, 'w') as f:
         f.write(str(frame_num))
